@@ -1,0 +1,40 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: billing-app
+  namespace: billing-modernization
+  labels:
+    app: billing-app
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: billing-app:latest
+  source:
+    type: Git
+    git:
+      uri: https://github.com/barissozen95/bob-case-study.git
+      ref: main
+    contextDir: modern-billing-system
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+  triggers:
+    - type: ConfigChange
+    - type: GitHub
+      github:
+        secret: billing-app-webhook-secret
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: billing-app
+  namespace: billing-modernization
+  labels:
+    app: billing-app
+spec:
+  lookupPolicy:
+    local: false
+
+# Made with Bob
