@@ -70,6 +70,61 @@ public class BillingService {
     }
     
     /**
+     * Creates a new invoice
+     *
+     * @param invoice the invoice to create
+     * @return created invoice with generated ID
+     */
+    @Transactional
+    public Invoice createInvoice(Invoice invoice) {
+        log.info("Creating new invoice for customer: {}", invoice.getCustomerId());
+        
+        try {
+            // Set initial values
+            invoice.setStatus(InvoiceStatus.PENDING);
+            invoice.setCreatedAt(LocalDateTime.now());
+            invoice.setUpdatedAt(LocalDateTime.now());
+            
+            // Save invoice
+            Invoice saved = invoiceRepository.save(invoice);
+            
+            // Record metric
+            incrementCounter("billing.invoices.created");
+            
+            log.info("Invoice created successfully with ID: {}", saved.getId());
+            return saved;
+        } catch (Exception e) {
+            log.error("Error creating invoice", e);
+            incrementCounter("billing.invoices.create.error");
+            throw new RuntimeException("Failed to create invoice", e);
+        }
+    }
+    
+    /**
+     * Retrieves all invoices
+     *
+     * @return list of all invoices
+     */
+    @Transactional(readOnly = true)
+    public List<Invoice> getAllInvoices() {
+        log.info("Fetching all invoices");
+        
+        try {
+            List<Invoice> invoices = invoiceRepository.findAll();
+            log.info("Found {} invoices", invoices.size());
+            
+            // Record metric
+            incrementCounter("billing.invoices.list");
+            
+            return invoices;
+        } catch (Exception e) {
+            log.error("Error fetching all invoices", e);
+            incrementCounter("billing.invoices.error");
+            throw new RuntimeException("Failed to retrieve invoices", e);
+        }
+    }
+    
+    /**
      * Processes a payment for an invoice with full transaction support
      * 
      * @param request payment request details

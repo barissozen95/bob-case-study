@@ -32,7 +32,7 @@ import java.util.List;
  * ✅ Exception handling
  */
 @RestController
-@RequestMapping("/api/v1/billing")
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Billing", description = "Billing and invoice management APIs")
@@ -40,14 +40,41 @@ public class BillingController {
     
     private final BillingService billingService;
     
-    @Operation(summary = "Get customer invoices", 
+    @Operation(summary = "Create invoice",
+               description = "Creates a new invoice")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Invoice created successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid invoice data"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @PostMapping("/invoices")
+    public ResponseEntity<Invoice> createInvoice(@Valid @RequestBody Invoice invoice) {
+        log.info("REST request to create invoice: {}", invoice);
+        Invoice created = billingService.createInvoice(invoice);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+    
+    @Operation(summary = "Get all invoices",
+               description = "Retrieves all invoices")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved invoices"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @GetMapping("/invoices")
+    public ResponseEntity<List<Invoice>> getAllInvoices() {
+        log.info("REST request to get all invoices");
+        List<Invoice> invoices = billingService.getAllInvoices();
+        return ResponseEntity.ok(invoices);
+    }
+    
+    @Operation(summary = "Get customer invoices",
                description = "Retrieves all invoices for a specific customer")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Successfully retrieved invoices"),
         @ApiResponse(responseCode = "400", description = "Invalid customer ID"),
         @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    @GetMapping("/customers/{customerId}/invoices")
+    @GetMapping("/billing/customers/{customerId}/invoices")
     public ResponseEntity<List<Invoice>> getCustomerInvoices(
             @Parameter(description = "Customer ID", required = true)
             @PathVariable String customerId) {
@@ -65,7 +92,7 @@ public class BillingController {
         @ApiResponse(responseCode = "404", description = "Invoice not found"),
         @ApiResponse(responseCode = "500", description = "Payment processing failed")
     })
-    @PostMapping("/payments")
+    @PostMapping("/billing/payments")
     public ResponseEntity<PaymentResponse> processPayment(
             @Valid @RequestBody PaymentRequest request) {
         
@@ -81,7 +108,7 @@ public class BillingController {
         @ApiResponse(responseCode = "400", description = "Invalid date range"),
         @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    @GetMapping("/revenue")
+    @GetMapping("/billing/revenue")
     public ResponseEntity<BigDecimal> calculateRevenue(
             @Parameter(description = "Start date (ISO format)")
             @RequestParam LocalDateTime startDate,
@@ -99,7 +126,7 @@ public class BillingController {
         @ApiResponse(responseCode = "202", description = "Processing started"),
         @ApiResponse(responseCode = "500", description = "Processing failed")
     })
-    @PostMapping("/invoices/process-overdue")
+    @PostMapping("/billing/invoices/process-overdue")
     public ResponseEntity<Void> processOverdueInvoices() {
         log.info("REST request to process overdue invoices");
         billingService.processOverdueInvoices();
