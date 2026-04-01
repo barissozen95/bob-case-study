@@ -1,5 +1,44 @@
 # Quick Test Guide - IBM Bob Telco Billing Demo
 
+## 🎨 Interactive Demo Form
+
+**NEW!** We've created an interactive HTML form for easy side-by-side comparison:
+
+### How to Use the Demo Form
+
+1. **Open the form** in your browser:
+   - Download `demo-form.html` from the repository
+   - Open it locally in any modern browser (Chrome, Firefox, Safari, Edge)
+   - Or access it via: `file:///path/to/demo-form.html`
+
+2. **Fill in the invoice details**:
+   - Customer ID (e.g., CUST001)
+   - Amount (e.g., 99.99)
+   - Description (e.g., "Monthly subscription")
+   - Due Date (e.g., 2026-05-01)
+
+3. **Click "Create Invoice in Both Systems"**:
+   - The form will POST to both legacy and modern systems simultaneously
+   - Results appear side-by-side for easy comparison
+   - Notice the differences in response format and validation
+
+### Demo Form Features
+
+- ✅ **Side-by-side comparison** of both systems
+- ✅ **Real-time API calls** to deployed applications
+- ✅ **Visual feedback** with loading states
+- ✅ **Error handling** demonstration
+- ✅ **Feature comparison table** built-in
+- ✅ **No installation required** - just open in browser
+
+### Demo Form URL Endpoints
+
+The form is pre-configured with the correct endpoints:
+- **Legacy**: `https://legacy-billing-app-billing-modernization.apps.69ccbf51306b4437a3a7ff2a.am1.techzone.ibm.com/legacy/invoices`
+- **Modern**: `https://billing-app-billing-modernization.apps.69ccbf51306b4437a3a7ff2a.am1.techzone.ibm.com/api/v1/invoices`
+
+---
+
 ## 🎯 Application URLs
 
 ### Modern Billing System (Java 17 + Spring Boot)
