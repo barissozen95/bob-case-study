@@ -4,12 +4,18 @@
 
 **NEW!** We've created an interactive HTML form for easy side-by-side comparison:
 
+### 🌐 Live Demo Form
+
+**Access the live demo form here:**
+```
+https://demo-form-billing-modernization.apps.69ccbf51306b4437a3a7ff2a.am1.techzone.ibm.com
+```
+
 ### How to Use the Demo Form
 
 1. **Open the form** in your browser:
-   - Download `demo-form.html` from the repository
-   - Open it locally in any modern browser (Chrome, Firefox, Safari, Edge)
-   - Or access it via: `file:///path/to/demo-form.html`
+   - **Live URL**: https://demo-form-billing-modernization.apps.69ccbf51306b4437a3a7ff2a.am1.techzone.ibm.com
+   - Or download `demo-form.html` from the repository and open locally
 
 2. **Fill in the invoice details**:
    - Customer ID (e.g., CUST001)

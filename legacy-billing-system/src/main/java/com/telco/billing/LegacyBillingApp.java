@@ -46,7 +46,7 @@ public class LegacyBillingApp {
         // Register endpoints
         server.createContext("/", new HomeHandler());
         server.createContext("/health", new HealthHandler());
-        server.createContext("/api/invoices", new InvoicesHandler());
+        server.createContext("/legacy/invoices", new InvoicesHandler());
         server.createContext("/api/payment", new PaymentHandler());
         
         server.setExecutor(null);
@@ -91,6 +91,8 @@ public class LegacyBillingApp {
     
     static class HomeHandler implements HttpHandler {
         public void handle(HttpExchange exchange) throws IOException {
+            // Add CORS headers
+            addCorsHeaders(exchange);
             String response = "<!DOCTYPE html><html><head><title>Legacy Billing System</title>" +
                 "<style>body{font-family:Arial;margin:40px;background:#f5f5f5;}" +
                 ".warning{background:#ff6b6b;color:white;padding:20px;border-radius:5px;margin:20px 0;}" +
@@ -133,6 +135,8 @@ public class LegacyBillingApp {
     
     static class HealthHandler implements HttpHandler {
         public void handle(HttpExchange exchange) throws IOException {
+            // Add CORS headers
+            addCorsHeaders(exchange);
             String response = "{\"status\":\"UP\",\"system\":\"legacy\",\"issues\":\"many\"}";
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, response.length());
@@ -144,6 +148,22 @@ public class LegacyBillingApp {
     
     static class InvoicesHandler implements HttpHandler {
         public void handle(HttpExchange exchange) throws IOException {
+            // Add CORS headers
+            addCorsHeaders(exchange);
+            
+            // Handle OPTIONS request for CORS preflight
+            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(200, -1);
+                return;
+            }
+            
+            // Handle POST request to create invoice
+            if ("POST".equals(exchange.getRequestMethod())) {
+                handleCreateInvoice(exchange);
+                return;
+            }
+            
+            // Handle GET request
             String query = exchange.getRequestURI().getQuery();
             String customerId = "CUST-001"; // default
             
@@ -192,8 +212,88 @@ public class LegacyBillingApp {
         }
     }
     
+    private static void handleCreateInvoice(HttpExchange exchange) throws IOException {
+        try {
+            // Read request body
+            String requestBody = new String(exchange.getRequestBody().readAllBytes());
+            System.out.println("Received invoice creation request: " + requestBody);
+            
+            // Parse JSON manually (no Jackson in legacy system!)
+            String customerId = extractJsonValue(requestBody, "customerId");
+            String amountStr = extractJsonValue(requestBody, "amount");
+            String description = extractJsonValue(requestBody, "description");
+            
+            double amount = Double.parseDouble(amountStr);
+            
+            // Insert into database (with SQL injection risk!)
+            String sql = "INSERT INTO legacy_invoices (customer_id, amount, status) VALUES ('" +
+                        customerId + "', " + amount + ", 'PENDING') RETURNING id";
+            
+            System.out.println("VULNERABLE INSERT: " + sql);
+            
+            Statement stmt = dbConnection.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+            
+            int invoiceId = 0;
+            if (rs.next()) {
+                invoiceId = rs.getInt(1);
+            }
+            rs.close();
+            stmt.close();
+            
+            String response = "{\"id\":" + invoiceId +
+                            ",\"customerId\":\"" + customerId +
+                            "\",\"amount\":" + amount +
+                            ",\"description\":\"" + description +
+                            "\",\"status\":\"PENDING\"" +
+                            ",\"warning\":\"Created with SQL injection vulnerability!\"}";
+            
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(201, response.length());
+            OutputStream os = exchange.getResponseBody();
+            os.write(response.getBytes());
+            os.close();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            String error = "{\"error\":\"" + e.getMessage() + "\"}";
+            exchange.sendResponseHeaders(500, error.length());
+            OutputStream os = exchange.getResponseBody();
+            os.write(error.getBytes());
+            os.close();
+        }
+    }
+    
+    private static String extractJsonValue(String json, String key) {
+        String searchKey = "\"" + key + "\"";
+        int startIndex = json.indexOf(searchKey);
+        if (startIndex == -1) return "";
+        
+        startIndex = json.indexOf(":", startIndex) + 1;
+        int endIndex = json.indexOf(",", startIndex);
+        if (endIndex == -1) {
+            endIndex = json.indexOf("}", startIndex);
+        }
+        
+        String value = json.substring(startIndex, endIndex).trim();
+        // Remove quotes if present
+        if (value.startsWith("\"")) {
+            value = value.substring(1, value.length() - 1);
+        }
+        return value;
+    }
+    
+    private static void addCorsHeaders(HttpExchange exchange) {
+        exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+        exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        exchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        exchange.getResponseHeaders().add("Access-Control-Max-Age", "3600");
+    }
+    
     static class PaymentHandler implements HttpHandler {
         public void handle(HttpExchange exchange) throws IOException {
+            // Add CORS headers
+            addCorsHeaders(exchange);
             String response = "{\"message\":\"Payment processing not implemented in legacy system\",\"recommendation\":\"Use modern system for payments\"}";
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(501, response.length());
