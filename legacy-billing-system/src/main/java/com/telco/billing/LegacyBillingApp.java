@@ -214,14 +214,22 @@ public class LegacyBillingApp {
     
     private static void handleCreateInvoice(HttpExchange exchange) throws IOException {
         try {
-            // Read request body
-            String requestBody = new String(exchange.getRequestBody().readAllBytes());
-            System.out.println("Received invoice creation request: " + requestBody);
+            // Read request body (Java 8 compatible way)
+            StringBuilder requestBody = new StringBuilder();
+            java.io.BufferedReader reader = new java.io.BufferedReader(
+                new java.io.InputStreamReader(exchange.getRequestBody()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                requestBody.append(line);
+            }
+            reader.close();
+            
+            System.out.println("Received invoice creation request: " + requestBody.toString());
             
             // Parse JSON manually (no Jackson in legacy system!)
-            String customerId = extractJsonValue(requestBody, "customerId");
-            String amountStr = extractJsonValue(requestBody, "amount");
-            String description = extractJsonValue(requestBody, "description");
+            String customerId = extractJsonValue(requestBody.toString(), "customerId");
+            String amountStr = extractJsonValue(requestBody.toString(), "amount");
+            String description = extractJsonValue(requestBody.toString(), "description");
             
             double amount = Double.parseDouble(amountStr);
             
