@@ -1,0 +1,18 @@
+# Prometheus configuration for Modern Billing System
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'billing-monitor'
+
+scrape_configs:
+  - job_name: 'billing-app'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['billing-app:8080']
+        labels:
+          application: 'modern-billing-system'
+          environment: 'docker'
+
+# Made with Bob
