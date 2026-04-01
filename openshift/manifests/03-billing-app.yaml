@@ -1,0 +1,165 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: billing-app-config
+  namespace: billing-modernization
+data:
+  application.yml: |
+    spring:
+      application:
+        name: modern-billing-service
+      datasource:
+        url: jdbc:postgresql://postgresql:5432/billing
+        username: billing_user
+        password: changeme123
+        driver-class-name: org.postgresql.Driver
+        hikari:
+          maximum-pool-size: 10
+          minimum-idle: 2
+      jpa:
+        hibernate:
+          ddl-auto: update
+        properties:
+          hibernate:
+            dialect: org.hibernate.dialect.PostgreSQLDialect
+    management:
+      endpoints:
+        web:
+          exposure:
+            include: health,info,metrics,prometheus
+      endpoint:
+        health:
+          show-details: always
+    server:
+      port: 8080
+    logging:
+      level:
+        com.telco.billing: INFO
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: billing-app
+  namespace: billing-modernization
+  labels:
+    app: billing-app
+    component: application
+    version: v2.0.0
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: billing-app
+  template:
+    metadata:
+      labels:
+        app: billing-app
+        component: application
+        version: v2.0.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/actuator/prometheus"
+    spec:
+      containers:
+      - name: billing-app
+        image: image-registry.openshift-image-registry.svc:5000/billing-modernization/billing-app:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "openshift"
+        - name: DB_URL
+          value: "jdbc:postgresql://postgresql:5432/billing"
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: postgresql-secret
+              key: database-user
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgresql-secret
+              key: database-password
+        - name: JAVA_OPTS
+          value: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: config
+          mountPath: /config
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: billing-app-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: billing-app
+  namespace: billing-modernization
+  labels:
+    app: billing-app
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/actuator/prometheus"
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: billing-app
+  type: ClusterIP
+
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: billing-app
+  namespace: billing-modernization
+  labels:
+    app: billing-app
+  annotations:
+    description: "Route for Modern Billing Application"
+spec:
+  to:
+    kind: Service
+    name: billing-app
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+
+# Made with Bob
