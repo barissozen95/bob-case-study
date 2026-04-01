@@ -81,6 +81,9 @@ public class BillingService {
         
         try {
             // Set initial values
+            if (invoice.getInvoiceDate() == null) {
+                invoice.setInvoiceDate(LocalDateTime.now());
+            }
             invoice.setStatus(InvoiceStatus.PENDING);
             invoice.setCreatedAt(LocalDateTime.now());
             invoice.setUpdatedAt(LocalDateTime.now());
