@@ -210,7 +210,14 @@ Execute tests for the modern application:
 Start the complete stack (app + database + monitoring):
 
 ```bash
+# Use the helper script (recommended)
+./scripts/start-docker.sh
+
+# Or manually with Docker Compose V2 (new syntax)
 cd docker
+docker compose up -d
+
+# Or with old docker-compose (if installed)
 docker-compose up -d
 ```
 
@@ -243,6 +250,11 @@ curl "http://localhost:8080/api/v1/billing/revenue?startDate=2024-01-01T00:00:00
 ### Stop Services
 
 ```bash
+# Use Docker Compose V2 (new syntax)
+cd docker
+docker compose down
+
+# Or with old docker-compose
 docker-compose down
 ```
 
