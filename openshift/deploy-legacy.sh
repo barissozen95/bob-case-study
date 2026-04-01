@@ -56,7 +56,7 @@ spec:
   strategy:
     type: Docker
     dockerStrategy:
-      dockerfilePath: ../docker/Dockerfile.legacy
+      dockerfilePath: Dockerfile
   triggers:
   - type: ConfigChange
 EOF
