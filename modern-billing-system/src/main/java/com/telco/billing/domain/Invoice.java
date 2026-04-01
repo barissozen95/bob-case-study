@@ -53,7 +53,6 @@ public class Invoice {
     @Column(name = "paid_amount", precision = 10, scale = 2)
     private BigDecimal paidAmount;
     
-    @NotNull(message = "Invoice date is required")
     @Column(name = "invoice_date", nullable = false)
     private LocalDateTime invoiceDate;
     
